@@ -15,6 +15,7 @@ export default class Recipients extends BaseSchema {
         .notNullable()
       table.string('phone_number', 20).notNullable()
       table.string('status', 15)
+      table.string('message_id', 70)
       table.timestamp('sent_at', { useTz: true })
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })

@@ -17,6 +17,9 @@ export default class Recipient extends BaseModel {
   @column()
   public status: string
 
+  @column()
+  public messageId: string
+
   @column.dateTime({ autoCreate: true })
   public createdAt: DateTime
 
