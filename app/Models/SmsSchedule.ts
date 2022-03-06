@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column, HasMany, hasMany } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, HasMany, hasMany, scope } from '@ioc:Adonis/Lucid/Orm'
 import Recipient from './Recipient'
 
 export default class SmsSchedule extends BaseModel {
@@ -23,4 +23,17 @@ export default class SmsSchedule extends BaseModel {
 
   @hasMany(() => Recipient)
   public recipients: HasMany<typeof Recipient>
+
+  public static statusFilter = scope((query, status: string) => {
+    if (status) {
+      query.where('status', status)
+    }
+  })
+
+  public static scheduledAtRangeFilter = scope((query, dateRange: string) => {
+    if (dateRange) {
+      const dates = dateRange.split(',')
+      query.whereBetween('scheduled_at', [dates[0], dates[1]])
+    }
+  })
 }

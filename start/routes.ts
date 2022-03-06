@@ -25,3 +25,4 @@ Route.get('/', async () => {
 })
 
 Route.post('sms/schedule', 'SmsController.createSchedule')
+Route.get('sms/schedule', 'SmsController.index')

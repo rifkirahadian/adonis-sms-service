@@ -22,4 +22,14 @@ export default class SmsController extends SmsModules {
       return this.errorResponseHandle(error, response)
     }
   }
+
+  public async index({ request, response }: HttpContextContract) {
+    try {
+      const smsSchedules = await this.getSmsSchedules(request)
+
+      return this.successResponse(smsSchedules, null, response)
+    } catch (error) {
+      return this.errorResponseHandle(error, response)
+    }
+  }
 }

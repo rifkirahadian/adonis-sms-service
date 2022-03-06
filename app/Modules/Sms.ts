@@ -3,6 +3,7 @@ import SmsSchedule from 'App/Models/SmsSchedule'
 import Responser from 'App/Utils/Responser'
 import { checkSmsStatus, sendSms } from 'App/Utils/Sms'
 import { DateTime } from 'luxon'
+import { RequestContract } from '@ioc:Adonis/Core/Request'
 
 export default class SmsModules extends Responser {
   public async createSmsSchedule(schedule: string, message: string): Promise<SmsSchedule> {
@@ -115,5 +116,20 @@ export default class SmsModules extends Responser {
     console.log({ smsStatusResponse })
 
     return recipient
+  }
+
+  public async getSmsSchedules(request: RequestContract) {
+    const { perPage, page, status, dateRange } = request.qs()
+
+    const schedules = await SmsSchedule.query()
+      .apply((scope) => {
+        scope.statusFilter(status)
+        scope.scheduledAtRangeFilter(dateRange)
+      })
+      .orderBy('id', 'desc')
+      .select('id', 'message', 'status', 'scheduled_at')
+      .paginate(page || 1, perPage || 10)
+
+    return schedules
   }
 }
