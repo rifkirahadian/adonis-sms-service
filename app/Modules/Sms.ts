@@ -5,6 +5,7 @@ import { checkSmsStatus, sendSms } from 'App/Utils/Sms'
 import { DateTime } from 'luxon'
 import { RequestContract } from '@ioc:Adonis/Core/Request'
 import { ResponseContract } from '@ioc:Adonis/Core/Response'
+import Event from '@ioc:Adonis/Core/Event'
 
 export default class SmsModules extends Responser {
   public async createSmsSchedule(schedule: string, message: string): Promise<SmsSchedule> {
@@ -36,6 +37,10 @@ export default class SmsModules extends Responser {
   public async sendSmsSchedule(smsSchedule: SmsSchedule) {
     const { id, message } = smsSchedule
 
+    console.log({
+      sendSms: id,
+    })
+
     const recipients = await Recipient.query().where('sms_schedule_id', id)
     const phoneNumbers = recipients.map((item) => {
       return item.phoneNumber
@@ -55,9 +60,6 @@ export default class SmsModules extends Responser {
     }
 
     await this.updateMessageId(id, smsResponse.message_id, phoneNumbers[0])
-    console.log({
-      sendSms: id,
-    })
   }
 
   public async updateMessageId(smsScheduleId: number, messageId: string, phoneNumber: string) {
@@ -84,20 +86,25 @@ export default class SmsModules extends Responser {
       .where({ smsScheduleId })
       .whereIn('status', ['sent', 'ACCEPTD'])
 
-    const assignRecipientsStatus = await Promise.all(
-      recipients.map((item) => {
-        return this.updateSmsStatus(item)
-      })
-    )
+    recipients.forEach((item, key) => {
+      setTimeout(() => {
+        Event.emit('sms:status-check', item)
+      }, 500 * (key + 1))
+    })
 
-    await this.isHasAcceptedRecipients(assignRecipientsStatus)
+    setTimeout(async () => {
+      await this.isDoneStatusChecking(smsScheduleId)
+    }, 500 * (recipients.length + 5))
   }
 
-  public async isHasAcceptedRecipients(recipients: Recipient[]) {
-    const filteredRecipients = recipients.filter((item) => item.status === 'ACCEPTD')
+  public async isDoneStatusChecking(smsScheduleId: number) {
+    const recipients = await Recipient.query()
+      .where({ smsScheduleId })
+      .whereIn('status', ['sent', 'ACCEPTD'])
+      .first()
 
-    if (filteredRecipients.length === 0) {
-      await SmsSchedule.query().where({ id: recipients[0].smsScheduleId }).update({
+    if (!recipients) {
+      await SmsSchedule.query().where({ id: smsScheduleId }).update({
         status: 'done',
       })
     }
