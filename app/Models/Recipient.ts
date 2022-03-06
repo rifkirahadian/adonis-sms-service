@@ -1,5 +1,5 @@
 import { DateTime } from 'luxon'
-import { BaseModel, column } from '@ioc:Adonis/Lucid/Orm'
+import { BaseModel, column, scope } from '@ioc:Adonis/Lucid/Orm'
 
 export default class Recipient extends BaseModel {
   @column({ isPrimary: true })
@@ -28,4 +28,17 @@ export default class Recipient extends BaseModel {
 
   @column.dateTime({ autoCreate: true, autoUpdate: true })
   public updatedAt: DateTime
+
+  public static statusFilter = scope((query, status: string) => {
+    if (status) {
+      query.where('status', status)
+    }
+  })
+
+  public static sentAtRangeFilter = scope((query, dateRange: string) => {
+    if (dateRange) {
+      const dates = dateRange.split(',')
+      query.whereBetween('sent_at', [dates[0], dates[1]])
+    }
+  })
 }

@@ -32,4 +32,17 @@ export default class SmsController extends SmsModules {
       return this.errorResponseHandle(error, response)
     }
   }
+
+  public async recipients({ request, response, params }: HttpContextContract) {
+    try {
+      const { id } = params
+      await this.getSmsSchedule(id, response)
+
+      const recipients = await this.getSmsScheduleRecipients(id, request)
+
+      return this.successResponse(recipients, null, response)
+    } catch (error) {
+      return this.errorResponseHandle(error, response)
+    }
+  }
 }

@@ -4,6 +4,7 @@ import Responser from 'App/Utils/Responser'
 import { checkSmsStatus, sendSms } from 'App/Utils/Sms'
 import { DateTime } from 'luxon'
 import { RequestContract } from '@ioc:Adonis/Core/Request'
+import { ResponseContract } from '@ioc:Adonis/Core/Response'
 
 export default class SmsModules extends Responser {
   public async createSmsSchedule(schedule: string, message: string): Promise<SmsSchedule> {
@@ -131,5 +132,29 @@ export default class SmsModules extends Responser {
       .paginate(page || 1, perPage || 10)
 
     return schedules
+  }
+
+  public async getSmsSchedule(id: number, response: ResponseContract) {
+    try {
+      return await SmsSchedule.findOrFail(id)
+    } catch (error) {
+      throw this.notFoundResponse(`Sms schedule id=${id} not found`, response)
+    }
+  }
+
+  public async getSmsScheduleRecipients(smsScheduleId: number, request: RequestContract) {
+    const { perPage, page, status, dateRange } = request.qs()
+
+    const recipients = await Recipient.query()
+      .where({ smsScheduleId })
+      .apply((scope) => {
+        scope.statusFilter(status)
+        scope.sentAtRangeFilter(dateRange)
+      })
+      .orderBy('id', 'desc')
+      .select('id', 'phone_number', 'status', 'sent_at')
+      .paginate(page || 1, perPage || 10)
+
+    return recipients
   }
 }
