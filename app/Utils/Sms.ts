@@ -10,6 +10,8 @@ export const sendSms = async (phoneNumbers: string[], message: string) => {
     .then((res) => res.data)
     .catch((res) => res)
 
+  console.log({ smsResponse: response })
+
   return response
 }
 
