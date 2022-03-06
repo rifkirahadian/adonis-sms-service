@@ -15,6 +15,9 @@ export default class Recipient extends BaseModel {
   public sentAt: DateTime
 
   @column()
+  public deliveredAt: string
+
+  @column()
   public status: string
 
   @column()

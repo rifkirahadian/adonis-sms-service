@@ -8,18 +8,20 @@ export const sendSms = async (phoneNumbers: string[], message: string) => {
       message,
     })
     .then((res) => res.data)
-    .catch((res) => res)
-
-  console.log({ smsResponse: response })
+    .catch((res) => {
+      throw res
+    })
 
   return response
 }
 
 export const checkSmsStatus = async (messageId: string) => {
   const response = await axios
-    .get(`${Env.get('SMS_URL')}`)
+    .get(`${Env.get('SMS_URL')}?messageId=${messageId}`)
     .then((res) => res.data)
-    .catch((res) => res)
+    .catch((res) => {
+      throw res
+    })
 
   return response
 }

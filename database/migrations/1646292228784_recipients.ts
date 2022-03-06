@@ -17,6 +17,7 @@ export default class Recipients extends BaseSchema {
       table.string('status', 15)
       table.string('message_id', 70)
       table.timestamp('sent_at', { useTz: true })
+      table.timestamp('delivered_at', { useTz: true })
       table.timestamp('created_at', { useTz: true })
       table.timestamp('updated_at', { useTz: true })
     })

@@ -1,7 +1,7 @@
 import Recipient from 'App/Models/Recipient'
 import SmsSchedule from 'App/Models/SmsSchedule'
 import Responser from 'App/Utils/Responser'
-import { sendSms } from 'App/Utils/Sms'
+import { checkSmsStatus, sendSms } from 'App/Utils/Sms'
 import { DateTime } from 'luxon'
 
 export default class SmsModules extends Responser {
@@ -33,7 +33,6 @@ export default class SmsModules extends Responser {
 
   public async sendSmsSchedule(smsSchedule: SmsSchedule) {
     const { id, message } = smsSchedule
-    const now = DateTime.local().toFormat('yyyy-MM-dd HH:mm:ss')
 
     const recipients = await Recipient.query().where('sms_schedule_id', id)
     const phoneNumbers = recipients.map((item) => {
@@ -48,19 +47,73 @@ export default class SmsModules extends Responser {
 
     if (recipients.length > 1) {
       const updateMessageQueries = smsResponse.map((item) => {
-        return Recipient.query().where({ smsScheduleId: id, phoneNumber: item.dnis }).update({
-          messageId: item.message_id,
-          status: 'sent',
-          sentAt: now,
-        })
+        return this.updateMessageId(id, item.message_id, item.dnis)
       })
       return await Promise.all(updateMessageQueries)
     }
 
-    await Recipient.query().where({ smsScheduleId: id }).update({
-      messageId: smsResponse.message_id,
-      status: 'sent',
-      sentAt: now,
-    })
+    await this.updateMessageId(id, smsResponse.message_id, phoneNumbers[0])
+  }
+
+  public async updateMessageId(smsScheduleId: number, messageId: string, phoneNumber: string) {
+    await Recipient.query()
+      .where({ smsScheduleId, phoneNumber })
+      .update({
+        messageId,
+        status: 'sent',
+        sentAt: DateTime.local().toFormat('yyyy-MM-dd HH:mm:ss'),
+      })
+  }
+
+  public async getSmsScheduleSent(): Promise<SmsSchedule[]> {
+    const aMinuteAgo = DateTime.local().plus({ minute: -1 }).toFormat('yyyy-MM-dd HH:mm:ss')
+    return await SmsSchedule.query()
+      .where({ status: 'sent' })
+      .whereHas('recipients', (query) => {
+        query.where('sent_at', '<', aMinuteAgo).whereIn('status', ['sent', 'ACCEPTD'])
+      })
+  }
+
+  public async checkSmsScheduleStatus(smsScheduleId: number) {
+    const recipients = await Recipient.query()
+      .where({ smsScheduleId })
+      .whereIn('status', ['sent', 'ACCEPTD'])
+
+    const assignRecipientsStatus = await Promise.all(
+      recipients.map((item) => {
+        return this.updateSmsStatus(item)
+      })
+    )
+
+    await this.isHasAcceptedRecipients(assignRecipientsStatus)
+  }
+
+  public async isHasAcceptedRecipients(recipients: Recipient[]) {
+    const filteredRecipients = recipients.filter((item) => item.status === 'ACCEPTD')
+
+    if (filteredRecipients.length === 0) {
+      await SmsSchedule.query().where({ id: recipients[0].smsScheduleId }).update({
+        status: 'done',
+      })
+    }
+  }
+
+  public async updateSmsStatus(recipient: Recipient) {
+    const { messageId } = recipient
+
+    const smsStatusResponse = await checkSmsStatus(messageId)
+    const { status, delivery_time: deliveryAt } = smsStatusResponse
+
+    recipient.status = status
+    if (status === 'DELIVRD') {
+      recipient.deliveredAt = DateTime.fromFormat(deliveryAt, 'yyMMddHHmm')
+        .setZone('Asia/Almaty')
+        .toFormat('yyyy-MM-dd HH:mm:ss')
+    }
+    await recipient.save()
+
+    console.log({ smsStatusResponse })
+
+    return recipient
   }
 }

@@ -3,9 +3,9 @@ import { BaseTask } from 'adonis5-scheduler/build'
 import SmsModules from 'App/Modules/Sms'
 const smsModules = new SmsModules()
 
-export default class SmsScheduler extends BaseTask {
+export default class SmsStatucCheck extends BaseTask {
   public static get schedule() {
-    return '1 * * * * *'
+    return '30 * * * * *'
   }
   /**
    * Set enable use .lock file for block run retry task
@@ -19,22 +19,23 @@ export default class SmsScheduler extends BaseTask {
     try {
       await Database.beginGlobalTransaction()
 
-      const pendingSms = await smsModules.getPendingSmsSchedule()
-      if (pendingSms.length > 0) {
+      const smsSchedules = await smsModules.getSmsScheduleSent()
+
+      if (smsSchedules.length > 0) {
         await Promise.all(
-          pendingSms.map((item) => {
-            return smsModules.sendSmsSchedule(item)
+          smsSchedules.map((item) => {
+            return smsModules.checkSmsScheduleStatus(item.id)
           })
         )
       }
 
       console.log({
-        smsSent: `sent ${pendingSms.length} row`,
+        smsStatusCheck: `checked ${smsSchedules.length} row`,
       })
 
       await Database.commitGlobalTransaction()
     } catch (error) {
-      console.log({ errorSmsSent: error.message })
+      console.log({ errorStatusCheck: error.message })
       await Database.rollbackGlobalTransaction()
     }
   }
