@@ -55,6 +55,9 @@ export default class SmsModules extends Responser {
     }
 
     await this.updateMessageId(id, smsResponse.message_id, phoneNumbers[0])
+    console.log({
+      sendSms: id,
+    })
   }
 
   public async updateMessageId(smsScheduleId: number, messageId: string, phoneNumber: string) {

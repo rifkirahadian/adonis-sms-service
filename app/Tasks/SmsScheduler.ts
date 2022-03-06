@@ -1,6 +1,8 @@
 import Database from '@ioc:Adonis/Lucid/Database'
 import { BaseTask } from 'adonis5-scheduler/build'
 import SmsModules from 'App/Modules/Sms'
+import Event from '@ioc:Adonis/Core/Event'
+
 const smsModules = new SmsModules()
 
 export default class SmsScheduler extends BaseTask {
@@ -21,11 +23,11 @@ export default class SmsScheduler extends BaseTask {
 
       const pendingSms = await smsModules.getPendingSmsSchedule()
       if (pendingSms.length > 0) {
-        await Promise.all(
-          pendingSms.map((item) => {
-            return smsModules.sendSmsSchedule(item)
-          })
-        )
+        pendingSms.forEach((item, key) => {
+          setTimeout(() => {
+            Event.emit('sms:send', item)
+          }, 1000 * (key + 1))
+        })
       }
 
       console.log({
