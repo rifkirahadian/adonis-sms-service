@@ -9,8 +9,8 @@ export default class SmsSchedules extends BaseSchema {
       table.timestamp('scheduled_at', { useTz: true }).notNullable()
       table.text('message').notNullable()
       table.string('status', 15)
-      table.timestamp('created_at', { useTz: true })
-      table.timestamp('updated_at', { useTz: true })
+      table.timestamp('created_at', { useTz: true }).nullable()
+      table.timestamp('updated_at', { useTz: true }).nullable()
     })
   }
 
