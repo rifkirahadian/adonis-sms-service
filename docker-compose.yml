@@ -4,8 +4,8 @@ services:
   app:
     build:
       context: .
-      dockerfile: ./dockerfiles/app/Dockerfile
-    image: nodejs
+      dockerfile: Dockerfile
+    image: node
     container_name: nodejs
     restart: unless-stopped
     env_file: .env
@@ -21,23 +21,21 @@ services:
     volumes:
       - .:/home/node/app
   
-  # scheduler:
-  #   build:
-  #     context: .
-  #     dockerfile: ./dockerfiles/scheduler/Dockerfile
-  #   image: nodejs
-  #   container_name: node-scheduler
-  #   restart: unless-stopped
-  #   env_file: .env
-  #   environment:
-  #     - MYSQL_HOST=db
-  #     - MYSQL_PORT=$MYSQL_PORT
-  #     - MYSQL_USER=$MYSQL_USER
-  #     - MYSQL_PASSWORD=$MYSQL_PASSWORD
-  #     - MYSQL_DB_NAME=$MYSQL_DB_NAME 
-  #     - APP_KEY=super_strok_key_no1_quezzes_it
-  #   volumes:
-  #     - .:/home/node/app
+  scheduler:
+    image: node
+    container_name: node-scheduler
+    restart: always
+    env_file: .env
+    environment:
+      - MYSQL_HOST=db
+      - MYSQL_PORT=$MYSQL_PORT
+      - MYSQL_USER=$MYSQL_USER
+      - MYSQL_PASSWORD=$MYSQL_PASSWORD
+      - MYSQL_DB_NAME=$MYSQL_DB_NAME 
+      - APP_KEY=super_strok_key_no1_quezzes_it
+    volumes:
+      - .:/home/node/app
+    command: "node ace scheduler:run"
       
   db:
    image: mysql:5.7

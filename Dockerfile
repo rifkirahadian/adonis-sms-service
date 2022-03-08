@@ -16,4 +16,5 @@ USER node
 
 EXPOSE 3333
 
-ENTRYPOINT ["sh","run.sh"]
+# ENTRYPOINT ["sh","run.sh"]
+CMD ["sh","run.sh"]
